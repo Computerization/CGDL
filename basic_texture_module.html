@@ -1,0 +1,171 @@
+<!DOCTYPE html>
+<html>
+<body id="main_body">
+<p>Test Canvas : </p>
+<canvas id="cgdl-canvas" width="500" height="300" style="border:1px solid #d3d3d3;background:#ffffff;">Your browser does not support the HTML5 canvas tag.</canvas>
+</body>
+
+<script>
+
+var cgdl_src_list = new Array();
+var cgdl_img_loaded = new Array();
+var cgdl_span_load = false;
+var cgdl_span_clock = null;
+var cgdl_first_init = false;
+var cgdl_img_loading = true;
+var cgdl_img_all_loaded = false;
+var cgdl_load_id = 0;
+var cgdl_span_clock_img_loading = true;
+var cgdl_img_main_loop = null;
+var cgdl_img_main_loop_prev_running = false;
+var cgdl_img_commands = new Array();//each element is an array, [img_id: int, x: int, y: int, width: int, height: int]
+var cgdl_canvas = document.getElementById("cgdl-canvas");
+var cgdl_context = cgdl_canvas.getContext("2d");
+
+function runCmd(cmd, ctx) {
+	var img_id = cmd[0];
+	var img_x = cmd[1];
+	var img_y = cmd[2];
+	var img_w = cmd[3];
+	var img_h = cmd[4];
+	var img = document.getElementById("cgdl-resource-img-"+img_id);
+	//ctx = document.getElementById("cgdl-canvas").getContext("2d");
+	ctx.drawImage(img,img_x,img_y,img_w,img_h);
+}
+
+function cgdlInit(bid){
+	if(!cgdl_first_init) {
+		document.getElementById(bid).innerHTML+='<span id="cgdl-resource-span" onload="cgdl_span_loader()"></span></p>';
+		cgdl_span_clock = setInterval(function() {
+			var flag = true;
+			var end_flag = true;
+			if(!cgdl_span_clock_img_loading) {
+				flag = false;
+				for( var i in cgdl_img_loaded ) {
+					if (cgdl_img_loaded[i] == false) {
+						end_flag = false;
+						break;
+					}
+				}
+				if (end_flag) {
+					console.log("images have all been loaded");
+					clearInterval(cgdl_span_clock);
+				}
+			}
+			if(cgdl_load_id >= cgdl_src_list.length) {
+				flag = false;
+				if ((!cgdl_img_loading) && cgdl_span_clock_img_loading){
+					cgdl_span_clock_img_loading = false;
+					console.log("images have all started loading");
+					flag = false;
+				}
+			}
+			if(flag) {
+				console.log("start loading : "+cgdl_load_id);
+				_cgdlAppendSrc(cgdl_load_id);
+				cgdl_load_id += 1;
+			}
+		}, 0.01, 0);
+		cgdl_img_main_loop = setInterval(function() {
+			if(!cgdl_img_main_loop_prev_running) {
+				cgdl_img_main_loop_prev_running = true;
+				ctx = document.getElementById("cgdl-canvas").getContext("2d");
+				ctx.save();
+				ctx.clearRect(0,0,cgdl_canvas.width,cgdl_canvas.height);
+				for(var i in cgdl_img_commands){
+					cmd = cgdl_img_commands[i];
+					if (cgdl_img_loaded[cmd[0]] == false) {
+						continue;//undecided: break?
+					}
+					runCmd(cmd, ctx);
+				}
+				ctx.restore();
+				cgdl_img_main_loop_prev_running = false;
+			}
+			else{
+				console.log("interrupted");
+			}
+		},0.01,0);
+	}
+	else {
+		console.log("already initialized!");
+	}
+}
+
+function cgdl_span_loader(){
+	console.log("cgdl span loaded");
+	cgdl_span_load = true;
+}
+
+function cgdlAppendSrc(src){
+	var id = cgdl_src_list.length;
+	console.log("start to append image : "+id);
+	cgdl_src_list.push(src);
+	cgdl_img_loaded.push(false);
+	return id;
+}
+
+function _cgdlAppendSrc(id){
+	src = cgdl_src_list[id];
+	var img = '<img id="cgdl-resource-img-'+id+'" src="'+src+'" height="0" width="0" onload="cgdlLoader('+id+')"/>'
+	document.getElementById("cgdl-resource-span").innerHTML += img;
+}
+
+function cgdlLoader(id){
+	if (!cgdl_img_loaded[id]) {
+		console.log("the image "+id+" has been loaded");
+		cgdl_img_loaded[id] = true;
+	}
+}
+
+function cgdlEndAppending(){
+	cgdl_img_loading = false;
+}
+
+function cgdlCreateImg( img_id, x, y, w, h ) {
+	var cmd_id = cgdl_img_commands.length;
+	cgdl_img_commands.push([img_id,x,y,w,h]);
+	return cmd_id;
+
+}
+
+function cgdlModifyImg( cmd_id, img_id, x, y, w, h ) {
+	if(img_id == null) img_id = cgdl_img_commands[cmd_id][0];
+	if(x == null) x = cgdl_img_commands[cmd_id][1];
+	if(y == null) y = cgdl_img_commands[cmd_id][2];
+	if(w == null) w = cgdl_img_commands[cmd_id][3];
+	if(h == null) h = cgdl_img_commands[cmd_id][4];
+	cgdl_img_commands[cmd_id] = [img_id,x,y,w,h];
+}
+
+function cgdlModifyImg( cmd_id, img_id, x, y, w, h, x_app, y_app, w_app, h_app ) {
+	if(img_id == null) img_id = cgdl_img_commands[cmd_id][0];
+	if(x == null) x = cgdl_img_commands[cmd_id][1];
+	if(x_app == true) x = cgdl_img_commands[cmd_id][1]+x;
+	if(y == null) y = cgdl_img_commands[cmd_id][2];
+	if(y_app == true) y = cgdl_img_commands[cmd_id][2]+y;
+	if(w == null) w = cgdl_img_commands[cmd_id][3];
+	if(w_app == true) w = cgdl_img_commands[cmd_id][3]+w;
+	if(h == null) h = cgdl_img_commands[cmd_id][4];
+	if(h_app == true) h = cgdl_img_commands[cmd_id][4]+h;
+	cgdl_img_commands[cmd_id] = [img_id,x,y,w,h];
+}
+
+cgdlInit("main_body");
+src1 = "C:/Users/admin/Desktop/timg.jpg";
+src2 = "C:/Users/admin/Desktop/Twilight.png";
+src3 = "C:/Users/admin/Desktop/Twilight2.png";
+id1 = cgdlAppendSrc(src1);
+id2 = cgdlAppendSrc(src2);
+id3 = cgdlAppendSrc(src3);
+id4 = cgdlEndAppending();
+cid1 = cgdlCreateImg(id1, 50, 50, 20, 20);
+cid2 = cgdlCreateImg(id1, 50, 70, 10, 20);
+cid3 = cgdlCreateImg(id2, 80, 80, 20, 20);
+cid4 = cgdlCreateImg(id3, 120, 120, 20, 20);
+var right = setInterval(function() {
+	cgdlModifyImg(cid1, null, 2, null, null, 1, true, false, false, true);
+},100);
+
+</script>
+</html>
