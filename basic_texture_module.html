@@ -7,6 +7,8 @@
 
 <script>
 
+"use strict"
+
 var cgdl_src_list = new Array();                             //the list of the directories of the image resources
 var cgdl_img_loaded = new Array();                           //whether the image resources have been loaded
 var cgdl_span_load = false;                                  //whether the resource span has been loaded
@@ -79,11 +81,11 @@ function cgdlInit( bid ) {
     cgdl_img_main_loop = setInterval( function() {
     if( !cgdl_img_main_loop_prev_running ) {
       cgdl_img_main_loop_prev_running = true;
-      ctx = document.getElementById( "cgdl-canvas" ).getContext( "2d" );
+      var ctx = document.getElementById( "cgdl-canvas" ).getContext( "2d" );
       ctx.save();
       ctx.clearRect( 0, 0, cgdl_canvas.width, cgdl_canvas.height );
       for( var i in cgdl_img_commands ){
-        cmd = cgdl_img_commands[i];
+        var cmd = cgdl_img_commands[i];
         if ( cgdl_img_loaded[cmd[0]] == false ) continue;//undecided: break?
         _cgdlRunCmd( cmd, ctx );
       }
@@ -124,7 +126,7 @@ function cgdlAppendSrc( src ) {
   * @id : the id of this image
   */
 function _cgdlAppendSrc( id ) {
-  src = cgdl_src_list[id];
+  var src = cgdl_src_list[id];
   var img = '<img id="cgdl-resource-img-' + id + '" src="' + src + '" height="0" width="0" onload="_cgdlLoader(' + id + ')"/>'
   document.getElementById( "cgdl-resource-span" ).innerHTML += img;
 }
@@ -222,29 +224,31 @@ function cgdlModifyImg( cmd_id, img_id, x, y, w, h, x_app, y_app, w_app, h_app )
   cgdl_img_commands[cmd_id] = [img_id,x,y,w,h];
 }
 
-//demo of this module
+//demo of this module :
 
 //initialize the module
 cgdlInit("main_body");
 
 //load three images, when running the programme, please change the directory of the images
-src1 = "C:/Users/admin/Desktop/timg.jpg";
-src2 = "C:/Users/admin/Desktop/Twilight.png";
-src3 = "C:/Users/admin/Desktop/Twilight2.png";
+var src1 = "C:/Users/admin/Desktop/timg.jpg";
+var src2 = "C:/Users/admin/Desktop/Twilight.png";
+var src3 = "C:/Users/admin/Desktop/Twilight2.png";
 
 //load the images as resources
-id1 = cgdlAppendSrc(src1);
-id2 = cgdlAppendSrc(src2);
-id3 = cgdlAppendSrc(src3);
+var id1 = cgdlAppendSrc(src1);
+var id2 = cgdlAppendSrc(src2);
+var id3 = cgdlAppendSrc(src3);
 
-//End of importing image resources. (Not neccessary)
+//End of importing image resources (Not neccessary)
 cgdlEndAppending();
-cid1 = cgdlDrawImg(id1, 50, 50, 20, 20);
-cid2 = cgdlDrawImg(id1, 50, 70, 10, 20);
-cid3 = cgdlDrawImg(id2, 80, 80, 20, 20);
-cid4 = cgdlDrawImg(id3, 120, 120, 20, 20);
 
-//Make the images move
+//Draw all the images on the canvas
+var cid1 = cgdlDrawImg(id1, 50, 50, 20, 20);
+var cid2 = cgdlDrawImg(id1, 50, 70, 10, 20);
+var cid3 = cgdlDrawImg(id2, 80, 80, 20, 20);
+var cid4 = cgdlDrawImg(id3, 120, 120, 20, 20);
+
+//Make the images move and scale
 var demo_movement = setInterval(function() {
   cgdlModifyImg(cid1, null, 2, null, null, 1, true, false, false, true);
   cgdlModifyImg(cid2, null, 1, 3, null, -1, true, true, false, true);
