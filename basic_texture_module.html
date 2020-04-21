@@ -2,170 +2,253 @@
 <html>
 <body id="main_body">
 <p>Test Canvas : </p>
-<canvas id="cgdl-canvas" width="500" height="300" style="border:1px solid #d3d3d3;background:#ffffff;">Your browser does not support the HTML5 canvas tag.</canvas>
+<canvas id="cgdl-canvas" style="width:100%;height:100%;border:1px solid #d3d3d3;background:#ffffff;">Your browser does not support the HTML5 canvas tag.</canvas>
 </body>
 
 <script>
 
-var cgdl_src_list = new Array();
-var cgdl_img_loaded = new Array();
-var cgdl_span_load = false;
-var cgdl_span_clock = null;
-var cgdl_first_init = false;
-var cgdl_img_loading = true;
-var cgdl_img_all_loaded = false;
-var cgdl_load_id = 0;
-var cgdl_span_clock_img_loading = true;
-var cgdl_img_main_loop = null;
-var cgdl_img_main_loop_prev_running = false;
-var cgdl_img_commands = new Array();//each element is an array, [img_id: int, x: int, y: int, width: int, height: int]
-var cgdl_canvas = document.getElementById("cgdl-canvas");
-var cgdl_context = cgdl_canvas.getContext("2d");
+var cgdl_src_list = new Array();                             //the list of the directories of the image resources
+var cgdl_img_loaded = new Array();                           //whether the image resources have been loaded
+var cgdl_span_load = false;                                  //whether the resource span has been loaded
+var cgdl_span_clock = null;                                  //the clock checking the loading state of the resource span, see function @_cgdlSpanLoader()
+var cgdl_first_init = false;                                 //whether the module has already been initialized, see function @cgdlInit( bid )
+var cgdl_img_loading = true;                                 //whether the images have all been uploaded as resources, see function @cgdlEndAppending()
+var cgdl_img_all_loaded = false;                             //whether the images have all finished loading
+var cgdl_load_id = 0;                                        //the current loading image
+var cgdl_span_clock_img_loading = true;                      //whether the images have all started loading, see function @cgdlInit( bid )
+var cgdl_img_main_loop = null;                               //the clock controlling the canvas and all the commands, see function @cgdlInit( bid )
+var cgdl_img_main_loop_prev_running = false;                 //whether the main-loop clock is still in running when one or several intervals have passed, it may be deprocated.
+var cgdl_img_commands = new Array();                         //each element is an array, [img_id: int, x: int, y: int, width: int, height: int]
+var cgdl_canvas = document.getElementById( "cgdl-canvas" );  //the dom of the canvas
 
-function runCmd(cmd, ctx) {
-	var img_id = cmd[0];
-	var img_x = cmd[1];
-	var img_y = cmd[2];
-	var img_w = cmd[3];
-	var img_h = cmd[4];
-	var img = document.getElementById("cgdl-resource-img-"+img_id);
-	//ctx = document.getElementById("cgdl-canvas").getContext("2d");
-	ctx.drawImage(img,img_x,img_y,img_w,img_h);
+/**
+  * function _cgdlRunCmd : draw the image by context @ctx as the command @cmd required to. Please do not call this function manually or something unexpected may happen.
+  * parameters: Array CanvasRenderingContext2D
+  */
+function _cgdlRunCmd( cmd, ctx ) {
+  var img_id = cmd[0];
+  var img_x = cmd[1];
+  var img_y = cmd[2];
+  var img_w = cmd[3];
+  var img_h = cmd[4];
+  var img = document.getElementById( "cgdl-resource-img-" + img_id );
+  ctx.drawImage( img, img_x, img_y, img_w, img_h );
 }
 
-function cgdlInit(bid){
-	if(!cgdl_first_init) {
-		document.getElementById(bid).innerHTML+='<span id="cgdl-resource-span" onload="cgdl_span_loader()"></span></p>';
-		cgdl_span_clock = setInterval(function() {
-			var flag = true;
-			var end_flag = true;
-			if(!cgdl_span_clock_img_loading) {
-				flag = false;
-				for( var i in cgdl_img_loaded ) {
-					if (cgdl_img_loaded[i] == false) {
-						end_flag = false;
-						break;
-					}
-				}
-				if (end_flag) {
-					console.log("images have all been loaded");
-					clearInterval(cgdl_span_clock);
-				}
-			}
-			if(cgdl_load_id >= cgdl_src_list.length) {
-				flag = false;
-				if ((!cgdl_img_loading) && cgdl_span_clock_img_loading){
-					cgdl_span_clock_img_loading = false;
-					console.log("images have all started loading");
-					flag = false;
-				}
-			}
-			if(flag) {
-				console.log("start loading : "+cgdl_load_id);
-				_cgdlAppendSrc(cgdl_load_id);
-				cgdl_load_id += 1;
-			}
-		}, 0.01, 0);
-		cgdl_img_main_loop = setInterval(function() {
-			if(!cgdl_img_main_loop_prev_running) {
-				cgdl_img_main_loop_prev_running = true;
-				ctx = document.getElementById("cgdl-canvas").getContext("2d");
-				ctx.save();
-				ctx.clearRect(0,0,cgdl_canvas.width,cgdl_canvas.height);
-				for(var i in cgdl_img_commands){
-					cmd = cgdl_img_commands[i];
-					if (cgdl_img_loaded[cmd[0]] == false) {
-						continue;//undecided: break?
-					}
-					runCmd(cmd, ctx);
-				}
-				ctx.restore();
-				cgdl_img_main_loop_prev_running = false;
-			}
-			else{
-				console.log("interrupted");
-			}
-		},0.01,0);
-	}
-	else {
-		console.log("already initialized!");
-	}
+/**
+  * function cgdlInit : load image and canvas updating loop, the main algorithm in this module.
+  * parameters: string
+  * @bid : the dom id of the body tag
+  */
+function cgdlInit( bid ) {
+  if( !cgdl_first_init ) {
+    cgdl_first_init = true;
+    document.getElementById( bid ).innerHTML += '<span id="cgdl-resource-span" onload="_cgdlSpanLoader()"></span>';
+	//after the span tag is loaded, the images will start loading
+    cgdl_span_clock = setInterval( function() {
+	  var flag = true;
+      var end_flag = true;
+      if( !cgdl_span_clock_img_loading ) {
+        flag = false;
+        for( var i in cgdl_img_loaded ) {
+          if ( cgdl_img_loaded[i] == false ) {
+            end_flag = false;
+            break;
+          }
+        }
+        if ( end_flag ) {
+          console.log( "images have all been loaded" );
+          clearInterval( cgdl_span_clock );
+        }
+      }
+      if( cgdl_load_id >= cgdl_src_list.length ) {
+        flag = false;
+        if ( ( !cgdl_img_loading ) && cgdl_span_clock_img_loading ){
+          cgdl_span_clock_img_loading = false;
+          console.log( "images have all started loading" );
+          flag = false;
+        }
+      }
+      if( flag ) {
+        console.log( "start loading : " + cgdl_load_id );
+        _cgdlAppendSrc( cgdl_load_id );
+        cgdl_load_id += 1;
+      }
+    }, 1, 0 );
+	//the main loop of the images. Each time: clear the canvas, draw images, save the canvas
+    cgdl_img_main_loop = setInterval( function() {
+    if( !cgdl_img_main_loop_prev_running ) {
+      cgdl_img_main_loop_prev_running = true;
+      ctx = document.getElementById( "cgdl-canvas" ).getContext( "2d" );
+      ctx.save();
+      ctx.clearRect( 0, 0, cgdl_canvas.width, cgdl_canvas.height );
+      for( var i in cgdl_img_commands ){
+        cmd = cgdl_img_commands[i];
+        if ( cgdl_img_loaded[cmd[0]] == false ) continue;//undecided: break?
+        _cgdlRunCmd( cmd, ctx );
+      }
+      ctx.restore();
+      cgdl_img_main_loop_prev_running = false;
+      }
+    }, 1, 0 );
+  }
+  else throw "already initialized!";
 }
 
-function cgdl_span_loader(){
-	console.log("cgdl span loaded");
-	cgdl_span_load = true;
+/**
+  * function _cgdlSpanLoader: update the loading state of the resource span tag, please do not call this function manually or something unexpected may happen.
+  * parameters: None
+  */
+function _cgdlSpanLoader() {
+  console.log( "cgdl span loaded" );
+  cgdl_span_load = true;
 }
 
-function cgdlAppendSrc(src){
-	var id = cgdl_src_list.length;
-	console.log("start to append image : "+id);
-	cgdl_src_list.push(src);
-	cgdl_img_loaded.push(false);
-	return id;
+/**
+  * function cgdlAppendSrc: append an image to the resources of this game.
+  * parameters: string
+  * @src : the directory of this image
+  * return : the cgdl identity of this image
+  */
+function cgdlAppendSrc( src ) {
+  var id = cgdl_src_list.length;
+  console.log( "start to append image : " + id );
+  cgdl_src_list.push( src );
+  cgdl_img_loaded.push( false );
+  return id;
 }
 
-function _cgdlAppendSrc(id){
-	src = cgdl_src_list[id];
-	var img = '<img id="cgdl-resource-img-'+id+'" src="'+src+'" height="0" width="0" onload="cgdlLoader('+id+')"/>'
-	document.getElementById("cgdl-resource-span").innerHTML += img;
+/**
+  * function _cgdlAppendSrc: start loading the image with id : @id. please do not call this function manually, or something unexpected may happen
+  * parameters: int
+  * @id : the id of this image
+  */
+function _cgdlAppendSrc( id ) {
+  src = cgdl_src_list[id];
+  var img = '<img id="cgdl-resource-img-' + id + '" src="' + src + '" height="0" width="0" onload="_cgdlLoader(' + id + ')"/>'
+  document.getElementById( "cgdl-resource-span" ).innerHTML += img;
 }
 
-function cgdlLoader(id){
-	if (!cgdl_img_loaded[id]) {
-		console.log("the image "+id+" has been loaded");
-		cgdl_img_loaded[id] = true;
-	}
+/**
+  * function cgdlLoader: update the loading state of any image resources, please do not call this function manually, or something unexpected may happen
+  * parameters: int
+  * @id : the id of the image which has just finished loading
+  */
+function _cgdlLoader( id ) {
+  if ( ! cgdl_img_loaded[id] ) {
+    console.log( "the image " + id + " has been loaded" );
+    cgdl_img_loaded[id] = true;
+  }
 }
 
-function cgdlEndAppending(){
-	cgdl_img_loading = false;
+/**
+  * function cgdlEndAppending: stop appending images, this will stop the image loading loop.
+  * parameters: None
+  */
+function cgdlEndAppending() {
+  cgdl_img_loading = false;
 }
 
-function cgdlCreateImg( img_id, x, y, w, h ) {
-	var cmd_id = cgdl_img_commands.length;
-	cgdl_img_commands.push([img_id,x,y,w,h]);
-	return cmd_id;
-
+/**
+  * function cgdlDrawImg: draw a new image on the canvas
+  * parameters: int int int int int
+  * @img_id : the id of the image resource, the accepted values are all in the returns of the function cgdlAppendSrc, one id can be used multiple times but they will create more than one image
+  * @x : the x-coordinate of the image on the canvas
+  * @y : the y-coordinate of the image on the canvas
+  * @w : the width of the image on the canvas
+  * @h : the height of the image on the canvas
+  * return :  the id of the command operating this image
+  */
+function cgdlDrawImg( img_id, x, y, w, h ) {
+  var cmd_id = cgdl_img_commands.length;
+  cgdl_img_commands.push( [img_id, x, y, w, h] );
+  return cmd_id;
 }
 
+/**
+  * function cgdlModifyImg: modify an existing image on the canvas: basic version
+  * parameters: int int/null int/null int/null int/null
+  * @cmd_id : the id of the command, which is the return of the function cgdlDrawing
+  * The following variables all accept the input "null" if there are no variations with the corresponding variable
+  * @img_id : the new id of the image resource, the accepted values are all in the returns of the function cgdlAppendSrc
+  * @x : the new x-coordinate of the image on the canvas
+  * @y : the new y-coordinate of the image on the canvas
+  * @w : the new width of the image on the canvas
+  * @h : the new height of the image on the canvas
+  */
 function cgdlModifyImg( cmd_id, img_id, x, y, w, h ) {
-	if(img_id == null) img_id = cgdl_img_commands[cmd_id][0];
-	if(x == null) x = cgdl_img_commands[cmd_id][1];
-	if(y == null) y = cgdl_img_commands[cmd_id][2];
-	if(w == null) w = cgdl_img_commands[cmd_id][3];
-	if(h == null) h = cgdl_img_commands[cmd_id][4];
-	cgdl_img_commands[cmd_id] = [img_id,x,y,w,h];
+  if( img_id == null ) img_id = cgdl_img_commands[cmd_id][0];
+  if( x == null ) x = cgdl_img_commands[cmd_id][1];
+  if( y == null ) y = cgdl_img_commands[cmd_id][2];
+  if( w == null ) w = cgdl_img_commands[cmd_id][3];
+  if( h == null ) h = cgdl_img_commands[cmd_id][4];
+  cgdl_img_commands[cmd_id] = [img_id, x, y, w, h];
 }
 
+/**
+  * function cgdlModifyImg: modify an existing image on the canvas: basic version
+  * parameters: int int/null int/null int/null int/null bool bool bool bool
+  * @cmd_id : the id of the command, which is the return of the function cgdlDrawing
+  * The variables @x, @y, @w, @h accept the input "null" if there are no variations with the corresponding variable
+  * @img_id : the new id of the image resource, the accepted values are all in the returns of the function cgdlAppendSrc
+  * @x :
+  *   when x_app is false, it represents the new x-coordinate of the image on the canvas
+  *   when x_app is true, it represents the change in x-coordinate of the image on the canvas
+  * @y : 
+  *   when y_app is false, it represents the new y-coordinate of the image on the canvas
+  *   when y_app is true, it represents the change in y-coordinate of the image on the canvas
+  * @w : 
+  *   when w_app is false, it represents the new width of the image on the canvas
+  *   when w_app is true, it represents the change in width of the image on the canvas
+  * @h : 
+  *   when h_app is false, it represents the new height of the image on the canvas
+  *   when h_app is true, it represents the change in height of the image on the canvas
+  * @x_app : represents x_coordinate_appending_form if x_app is true, represents x_coordinate_setting_form if x_app is false
+  * @y_app : represents y_coordinate_appending_form if y_app is true, represents y_coordinate_setting_form if y_app is false
+  * @w_app : represents width_appending_form if w_app is true, represents width_setting_form if w_app is false
+  * @h_app : represents height_appending_form if h_app is true, represents height_setting_form if h_app is false
+  * Note : If appending form is used for any variable, the initial value of that variable will be the change in value.
+  */
 function cgdlModifyImg( cmd_id, img_id, x, y, w, h, x_app, y_app, w_app, h_app ) {
-	if(img_id == null) img_id = cgdl_img_commands[cmd_id][0];
-	if(x == null) x = cgdl_img_commands[cmd_id][1];
-	if(x_app == true) x = cgdl_img_commands[cmd_id][1]+x;
-	if(y == null) y = cgdl_img_commands[cmd_id][2];
-	if(y_app == true) y = cgdl_img_commands[cmd_id][2]+y;
-	if(w == null) w = cgdl_img_commands[cmd_id][3];
-	if(w_app == true) w = cgdl_img_commands[cmd_id][3]+w;
-	if(h == null) h = cgdl_img_commands[cmd_id][4];
-	if(h_app == true) h = cgdl_img_commands[cmd_id][4]+h;
-	cgdl_img_commands[cmd_id] = [img_id,x,y,w,h];
+  if( img_id == null) img_id = cgdl_img_commands[cmd_id][0];
+  if( x == null ) x = cgdl_img_commands[cmd_id][1];
+  if( x_app == true ) x = cgdl_img_commands[cmd_id][1] + x;
+  if( y == null ) y = cgdl_img_commands[cmd_id][2];
+  if( y_app == true ) y = cgdl_img_commands[cmd_id][2] + y;
+  if( w == null ) w = cgdl_img_commands[cmd_id][3];
+  if( w_app == true ) w = cgdl_img_commands[cmd_id][3] + w;
+  if( h == null ) h = cgdl_img_commands[cmd_id][4];
+  if( h_app == true ) h = cgdl_img_commands[cmd_id][4] + h;
+  cgdl_img_commands[cmd_id] = [img_id,x,y,w,h];
 }
 
+//demo of this module
+
+//initialize the module
 cgdlInit("main_body");
+
+//load three images, when running the programme, please change the directory of the images
 src1 = "C:/Users/admin/Desktop/timg.jpg";
 src2 = "C:/Users/admin/Desktop/Twilight.png";
 src3 = "C:/Users/admin/Desktop/Twilight2.png";
+
+//load the images as resources
 id1 = cgdlAppendSrc(src1);
 id2 = cgdlAppendSrc(src2);
 id3 = cgdlAppendSrc(src3);
-id4 = cgdlEndAppending();
-cid1 = cgdlCreateImg(id1, 50, 50, 20, 20);
-cid2 = cgdlCreateImg(id1, 50, 70, 10, 20);
-cid3 = cgdlCreateImg(id2, 80, 80, 20, 20);
-cid4 = cgdlCreateImg(id3, 120, 120, 20, 20);
-var right = setInterval(function() {
-	cgdlModifyImg(cid1, null, 2, null, null, 1, true, false, false, true);
-},100);
+
+//End of importing image resources. (Not neccessary)
+cgdlEndAppending();
+cid1 = cgdlDrawImg(id1, 50, 50, 20, 20);
+cid2 = cgdlDrawImg(id1, 50, 70, 10, 20);
+cid3 = cgdlDrawImg(id2, 80, 80, 20, 20);
+cid4 = cgdlDrawImg(id3, 120, 120, 20, 20);
+
+//Make the images move
+var demo_movement = setInterval(function() {
+  cgdlModifyImg(cid1, null, 2, null, null, 1, true, false, false, true);
+  cgdlModifyImg(cid2, null, 1, 3, null, -1, true, true, false, true);
+},10);
 
 </script>
 </html>
