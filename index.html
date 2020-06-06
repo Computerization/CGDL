@@ -15,15 +15,47 @@
 	};
   </style>
  </head>
- <body id = 'bd'>I have no idea how to solve this problem.
+ <body id = 'bd'>
  <canvas id = 'cgdl-canvas'>Unable to show the canvas in this browser</canvas>
  </body>
  <script src="cgdl-prototype.js"></script>
  <script>
+	/*
 	myCGDL = new CGDL();
 	myTexture = new Texture(0, myCGDL.context, "C:/Users/admin/Desktop/projects/computerization/CGDL/images/actor2.png");
 	myTexture.setHeight(50);
 	myTexture.setWidth(50);
 	myTexture.show();
+	*/
+	var ctm = CGDLTextureManager;
+
+	//initialize the module
+	ctm.UtilsLoader();
+	ctm.cgdlInit("bd");
+
+	//load three images, when running the programme, please change the directory of the images
+	var src1 = "C:/Users/admin/Desktop/timg.jpg";
+	var src2 = "C:/Users/admin/Desktop/Twilight.png";
+	var src3 = "C:/Users/admin/Desktop/Twilight2.png";
+
+	//load the images as resources
+	var id1 = ctm.cgdlAppendSrc(src1);
+	var id2 = ctm.cgdlAppendSrc(src2);
+	var id3 = ctm.cgdlAppendSrc(src3);
+
+	//End of importing image resources (Not neccessary)
+	ctm.cgdlEndAppending();
+
+	//Draw all the images on the canvas
+	var cid1 = ctm.cgdlDrawImg(id1, 50, 50, 20, 20);
+	var cid2 = ctm.cgdlDrawImg(id1, 50, 70, 10, 20);
+	var cid3 = ctm.cgdlDrawImg(id2, 80, 80, 20, 20);
+	var cid4 = ctm.cgdlDrawImg(id3, 120, 120, 20, 20);
+
+	//Make the images move and scale
+	var demo_movement = setInterval(function() {
+	  ctm.cgdlModifyImg(cid1, null, 2, null, null, 1, true, false, false, true);
+	  ctm.cgdlModifyImg(cid2, null, 1, 3, null, -1, true, true, false, true);
+	},10);
  </script>
 </html>
