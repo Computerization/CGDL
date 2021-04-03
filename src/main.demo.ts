@@ -1,4 +1,4 @@
-import CGDLTextureManager from './CGDLTextureManager.js';
+import CGDLTextureManager from "./CGDLTextureManager.js";
 
 /*
 myCGDL = new CGDL();

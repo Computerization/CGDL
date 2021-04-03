@@ -1,10 +1,14 @@
-import CGDLSystem from './CGDLSystem.js';
+import CGDLSystem from "./CGDLSystem.js";
 
 class Actor extends CGDLSystem {
   static APPEARANCE_TEXTURE: number = 0;
   static APPEARANCE_GEOMETRIC: number = 1;
   #appearanceType: number = undefined;
-  constructor(id: number, context: CanvasRenderingContext2D, appearanceType: number) {
+  constructor(
+    id: number,
+    context: CanvasRenderingContext2D,
+    appearanceType: number
+  ) {
     super(id, 2, context);
     this.#appearanceType = appearanceType;
   }
