@@ -1,0 +1,21 @@
+{
+  "name": "cgdl",
+  "version": "0.0.0",
+  "description": "2D Game Developing Library for Computerization",
+  "license": "MIT",
+  "scripts": {
+    "serve": "npx serve",
+    "compile": "tsc",
+    "format": "prettier --write \"**/*.{js,ts,css,html}\"",
+    "format:check": "prettier --check \"**/*.{js,ts,css,html}\""
+  },
+  "devDependencies": {
+    "@typescript-eslint/eslint-plugin": "^4.20.0",
+    "@typescript-eslint/parser": "^4.20.0",
+    "eslint": "^7.23.0",
+    "eslint-config-prettier": "^8.1.0",
+    "eslint-plugin-prettier": "^3.3.1",
+    "prettier": "^2.2.1",
+    "typescript": "^4.2.3"
+  }
+}
