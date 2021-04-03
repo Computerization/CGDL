@@ -4,7 +4,7 @@
   "description": "2D Game Developing Library for Computerization",
   "license": "MIT",
   "scripts": {
-    "serve": "npx serve",
+    "serve": "tsc && npx serve",
     "compile": "tsc",
     "format": "prettier --write \"**/*.{js,ts,css,html}\"",
     "format:check": "prettier --check \"**/*.{js,ts,css,html}\""
