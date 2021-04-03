@@ -1,32 +1,56 @@
 # CGDL  
-## 2D Game Developing Library for Computerization  
+
+> 2D Game Developing Library for Computerization  
+
 ## CGDL  
+
 ### Purpose  
+
 1. Create a convenient and useful tool for wfla game developers. "wfla game developers" not only refers to the programmers, but all the students who are willing to develop games.  
 2. Computerization is planning to set up a competition of game developing in WFLA. This tool is planned to be served as the official tool of this competition.  
-### Language  
-Javascript  
+### Technical details  
+
+- Language: Javascript  
+- Compile TypeScript with
+```shell
+$ tsc
+```
+- Start the app with
+```shell
+$ npx serve
+```
+
 ### Functions  
+
 The functions for the nonprogrammers are not mentioned  
+
 #### Functions that will be written in the prototype  
+
 1. Multi-scene  
 2. Action System for Game Characters  
 3. Interactive System  
 4. Particle Effects  
 5. Geometric Figure and Text Management  
 6. Music Management  
+
 #### Functions that will defenitely appear in the future  
+
 7. User Management  
 8. Web-based Database  
 9. Basic Textures  
+
 #### Functions that may appear in the future
+
 10. AI-npc System  
 11. Physical Engine  
 12. PVP Function  
 13. Skinned Mesh  
 #### Other Functions  
+
 14.  Graphic Programming Interface  
+
 ## Details about the Competition
+
 1. In the first competition, only Computerization members are allowed to attend. However, in the future, we are planned to allow all wflaers (including middle-school department) to attend the activity.  
 2. Games should be designed using this library and the language of javascript unless we have finished the graphic programming interface or the adaption of other languages.  
 3. Games should fit the theme given before the launch of the competition.  
