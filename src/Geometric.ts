@@ -1,8 +1,8 @@
-import CGDLSystem from "./CGDLSystem.js";
+import CGDLSystem, { CGDLType } from "./CGDLSystem.js";
 
 class Geometric extends CGDLSystem {
   constructor(id: number, context: CanvasRenderingContext2D) {
-    super(id, 1, context);
+    super(id, CGDLType.geometric, context);
   }
 }
 

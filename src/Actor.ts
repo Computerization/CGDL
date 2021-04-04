@@ -1,26 +1,37 @@
-import CGDLSystem from "./CGDLSystem.js";
+import CGDLSystem, { CGDLType } from "./CGDLSystem.js";
+
+enum appearance {
+  texture,
+  geometric,
+}
 
 class Actor extends CGDLSystem {
-  static APPEARANCE_TEXTURE: number = 0;
-  static APPEARANCE_GEOMETRIC: number = 1;
-  #appearanceType: number = undefined;
+  #appearanceType: appearance;
+  #appearanceData: number;
+
   constructor(
     id: number,
     context: CanvasRenderingContext2D,
     appearanceType: number
   ) {
-    super(id, 2, context);
+    super(id, CGDLType.actor, context);
     this.#appearanceType = appearanceType;
   }
-  bindTexture(textureData): void {
-    if (this.#appearanceType != Actor.APPEARANCE_TEXTURE) {
-      throw "CGDLError: Apperance Type does not match with this method.";
-    }
+
+  bindTexture(textureData: number): void {
+    if (this.#appearanceType != appearance.texture)
+      throw new TypeError(
+        "CGDLError: Apperance Type does not match with this method."
+      );
+    this.#appearanceData = textureData;
   }
-  bindGeometric(geometricData): void {
-    if (this.#appearanceType != Actor.APPEARANCE_GEOMETRIC) {
-      throw "CGDLError: Apperance Type does not match with this method.";
-    }
+
+  bindGeometric(geometricData: number): void {
+    if (this.#appearanceType != appearance.geometric)
+      throw new TypeError(
+        "CGDLError: Apperance Type does not match with this method."
+      );
+    this.#appearanceData = geometricData;
   }
 }
 

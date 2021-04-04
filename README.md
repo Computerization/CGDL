@@ -8,16 +8,21 @@
 
 1. Create a convenient and useful tool for wfla game developers. "wfla game developers" not only refers to the programmers, but all the students who are willing to develop games.  
 2. Computerization is planning to set up a competition of game developing in WFLA. This tool is planned to be served as the official tool of this competition.  
+
 ### Technical details  
 
-- Language: Javascript  
+- Language: TypeScript  
 - Compile TypeScript with
 ```shell
-$ tsc
+$ yarn compile
 ```
 - Start the app with
 ```shell
-$ npx serve
+$ yarn serve
+```
+- Format the code with
+```shell
+$ yarn format
 ```
 
 ### Functions  
@@ -45,6 +50,7 @@ The functions for the nonprogrammers are not mentioned
 11. Physical Engine  
 12. PVP Function  
 13. Skinned Mesh  
+
 #### Other Functions  
 
 14.  Graphic Programming Interface  
