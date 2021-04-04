@@ -78,13 +78,13 @@ class CGDLTextureManager {
    * @param {number} `id` The id of this image
    */
   static __appendSrc(id: number) {
-    let src: string = CGDLTextureManager.src_list[id];
-    document.getElementById(
-      "cgdl-resource-span"
-    ).innerHTML += `<img id="cgdl-resource-img-${id}" src="${src}" height="0" width="0" />`;
-    document
-      .getElementById(`cgdl-resource-img-${id}`)
-      .addEventListener("load", () => CGDLTextureManager.__loader(id));
+    let img: HTMLImageElement = document.createElement("img");
+    img.id = `cgdl-resource-img-${id}`;
+    img.src = CGDLTextureManager.src_list[id];
+    img.width = 0;
+    img.height = 0;
+    img.addEventListener("load", () => CGDLTextureManager.__loader(id));
+    document.getElementById("cgdl-resource-span").appendChild(img);
   }
 
   /**
@@ -105,11 +105,10 @@ class CGDLTextureManager {
   static init(bid: string): void {
     if (!CGDLTextureManager.first_init) {
       CGDLTextureManager.first_init = true;
-      document.getElementById(bid).innerHTML +=
-        '<span id="cgdl-resource-span"></span>';
-      document
-        .getElementById("cgdl-resource-span")
-        .addEventListener("load", CGDLTextureManager.__spanLoader);
+      let span: HTMLSpanElement = document.createElement("span");
+      span.id = "cgdl-resource-span";
+      span.addEventListener("load", CGDLTextureManager.__spanLoader);
+      document.getElementById(bid).appendChild(span);
       (window as any).CGDLTextureManager = CGDLTextureManager;
       // After the span tag is loaded, the images will start loading
       CGDLTextureManager.span_clock = setInterval(
@@ -122,8 +121,7 @@ class CGDLTextureManager {
             }
           }
           if (
-            CGDLTextureManager.load_id >=
-            CGDLTextureManager.src_list.length
+            CGDLTextureManager.load_id >= CGDLTextureManager.src_list.length
           ) {
             loading = false;
             if (
